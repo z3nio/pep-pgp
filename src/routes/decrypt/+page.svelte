@@ -2,25 +2,18 @@
 	import Spinner from "$lib/components/Spinner.svelte";
 	import {delay, formatPgpBlock} from "$lib";
 	import * as openpgp from "openpgp";
-	import {writable} from "svelte/store";
-	import {getModalStore} from "@skeletonlabs/skeleton";
-	import type {ModalSettings} from "@skeletonlabs/skeleton";
+	import {modal} from "$lib/stores/modal";
 
-	let loading = writable(false);
+	let loading = $state(false);
+	let recieverprivatekey: string = $state("");
+	let encryptedmessage: string = $state("");
+	let signerpublickey: string = $state("");
+	let passphrase: string = $state("");
 
-	let recieverprivatekey: string;
-	let encryptedmessage: string;
-	let signerpublickey: string;
-	let passphrase: string;
-	let hasError: boolean;
-	let generatedMessage: openpgp.WebStream<string>;
-
-	const modalStore = getModalStore();
-
-	async function onSubmit() {
-		$loading = true;
+	async function onSubmit(event: SubmitEvent) {
+		event.preventDefault();
+		loading = true;
 		await delay(100);
-
 		try {
 			const encryptedMessage = await openpgp.readMessage({armoredMessage: formatPgpBlock(encryptedmessage)});
 			const recieverPrivateKey = await openpgp.decryptKey({
@@ -28,90 +21,82 @@
 				passphrase: passphrase,
 			});
 			const verificationKey = await openpgp.readKey({armoredKey: formatPgpBlock(signerpublickey)});
-
 			const decryptedMessage = await openpgp.decrypt({
 				message: encryptedMessage,
 				decryptionKeys: recieverPrivateKey,
 				verificationKeys: verificationKey,
 				passwords: passphrase,
 			});
-			hasError = false
-			generatedMessage = decryptedMessage.data
+
+			$modal.title = "Decrypted Message";
+			$modal.description = "This is your decrypted message from the given encrypted message.";
+			$modal.type = "DecryptedMessage";
+			$modal.decryptedMessage = decryptedMessage.data as string;
+			$modal.hasError = false;
+			loading = false;
+			$modal.isOpen = true;
 		} catch (e) {
-			console.log(e)
-			hasError = true
+			console.log(e);
+			$modal.hasError = true;
+			$modal.errorMessage = e as string;
+			$modal.isOpen = true;
+			loading = false;
 		}
 
-		const modal: ModalSettings = {
-			type: "component",
-			component: "DecryptMessageModal",
-			title: "Decrypted Message",
-			body: "This is your decrypted message from the given encrypted message.",
-			meta: {
-				decryptedMessage: generatedMessage,
-				hasError: hasError
-			},
-		};
-		modalStore.trigger(modal);
-		signerpublickey = ""
-		encryptedmessage = ""
-		recieverprivatekey = ""
+		signerpublickey = "";
+		encryptedmessage = "";
+		recieverprivatekey = "";
 		passphrase = "";
-		$loading = false;
 	}
 </script>
 
-<form class="grid grid-cols-1 lg:grid-cols-2 w-full gap-2 text-sm" on:submit|preventDefault={onSubmit}>
-	<div class="flex flex-col gap-1">
-		<label class="label">
-			<span class="text-xs">Signer's Public Key</span>
-			<textarea
-				bind:value={signerpublickey}
-				required
-				class="textarea bg-primary-100 text-sm h-48"
-				rows="4"
-				placeholder="Paste Signer's Public Key..."
-			/>
-		</label>
-	</div>
-	<div class="flex flex-col gap-1">
-		<label class="label">
-			<span class="text-xs">Message in Encrypted Text</span>
-			<textarea
-				bind:value={encryptedmessage}
-				required
-				class="textarea bg-primary-100 text-sm h-48"
-				rows="4"
-				placeholder="Paste Message in Encrypted Text..."
-			/>
-		</label>
-	</div>
-	<div class="flex flex-col gap-1">
-		<label class="label">
-			<span class="text-xs">Reciever's Private Key</span>
-			<textarea
-				bind:value={recieverprivatekey}
-				required
-				class="textarea bg-primary-100 text-sm h-48"
-				rows="4"
-				placeholder="Paste Reciever's Private Key..."
-			/>
-		</label>
-	</div>
+<form onsubmit={onSubmit}>
+	<label class="label-container">
+		<p class="label">Signer's Public Key</p>
+		<textarea bind:value={signerpublickey} rows="12" required placeholder="Paste Signer's Public Key..." />
+	</label>
+	<label class="label-container">
+		<p class="label">Message in Encrypted Text</p>
+		<textarea bind:value={encryptedmessage} rows="12" required placeholder="Paste Message in Encrypted Text..." />
+	</label>
+	<label class="label-container">
+		<p class="label">Reciever's Private Key</p>
+		<textarea bind:value={recieverprivatekey} rows="12" required placeholder="Paste Reciever's Private Key..." />
+	</label>
 	<div />
-	<div class="flex flex-col gap-1">
-		<p>Passphrase</p>
-		<div class="input-group input-group-divider grid-cols-[auto_1fr_auto] bg-primary-100">
-			<div class="input-group-shim">🔐</div>
-			<input bind:value={passphrase} type="password" required placeholder="Passphrase for Private Key" class="text-sm"  />
-		</div>
-
-		<button type="submit" class="btn-sm btn variant-filled my-2">
-			{#if $loading === true}
+	<div>
+		<label class="label-container">
+			<p class="label">Passphrase</p>
+			<div class="input-wrapper">
+				<div class="input-icon">🔐</div>
+				<input bind:value={passphrase} required type="password" placeholder="Passphrase for Private Key" />
+			</div>
+		</label>
+		<button type="submit" class="button">
+			{#if loading === true}
 				<Spinner />
 			{:else}
-				Decrypt Message
+				Sign Message
 			{/if}
 		</button>
 	</div>
 </form>
+
+<style>
+	@media (min-width: 1024px) {
+		form {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	form {
+		display: grid;
+		font-size: small;
+		max-width: 100%;
+		gap: 0.5rem;
+	}
+	.button {
+		margin-top: 0.5rem;
+		margin-bottom: 0.5rem;
+		width: 100%;
+	}
+</style>

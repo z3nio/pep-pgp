@@ -1,4 +1,4 @@
-<div aria-label="Loading..." role="status" class="flex items-center justify-center w-full">
+<div aria-label="Loading..." role="status">
 	<svg
 		width="24"
 		height="24"
@@ -14,3 +14,25 @@
 		<path d="M12 3v3m6.366-.366-2.12 2.12M21 12h-3m.366 6.366-2.12-2.12M12 21v-3m-6.366.366 2.12-2.12M3 12h3m-.366-6.366 2.12 2.12"> </path>
 	</svg>
 </div>
+
+<style>
+	div {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		/* The animation part: */
+		animation-name: spin;
+		animation-duration: 1250ms;
+		animation-iteration-count: infinite;
+		animation-timing-function: linear;
+	}
+	@keyframes spin {
+		0% {
+			-webkit-transform: rotate(0deg);
+		}
+		100% {
+			-webkit-transform: rotate(360deg);
+		}
+	}
+</style>

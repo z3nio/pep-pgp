@@ -1,25 +1,19 @@
 <script lang="ts">
-	import {writable} from "svelte/store";
+	import {modal} from "$lib/stores/modal";
 	import {formatPgpBlock} from "$lib";
 	import Spinner from "$lib/components/Spinner.svelte";
 	import {delay} from "$lib";
 	import * as openpgp from "openpgp";
-	import type {ModalSettings} from "@skeletonlabs/skeleton";
-	import {getModalStore} from "@skeletonlabs/skeleton";
 
-	let loading = writable(false);
+	let loading = $state(false);
+	let signerspublickey: string = $state("");
+	let signedmessage: string = $state("");
+	let isVerified: boolean = $state(false);
 
-	let signerspublickey: string;
-	let signedmessage: string;
-
-	let isVerified: boolean;
-
-	const modalStore = getModalStore();
-
-	async function onSubmit() {
-		$loading = true;
+	async function onSubmit(event: SubmitEvent) {
+		event.preventDefault()
+		loading = true;
 		await delay(100);
-
 		try {
 			const publicKey = await openpgp.readKey({armoredKey: formatPgpBlock(signerspublickey)});
 			const message = await openpgp.readCleartextMessage({cleartextMessage: signedmessage.trim()});
@@ -28,59 +22,60 @@
 				verificationKeys: publicKey,
 			});
 			if (signatures.length > 0) {
-				isVerified = true;
+				$modal.title = "Verified Message Status";
+				$modal.description = "This is the status of the signed message.";
+				$modal.type = "VerifiedMessage";
+				$modal.verifiedMessageStatus = true;
+				$modal.hasError = false;
+				loading = false;
+				$modal.isOpen = true;
 			}
 		} catch (e) {
 			console.log(e);
+			$modal.hasError = true;
+			$modal.isOpen = true;
+			$modal.errorMessage = e as string;
 			isVerified = false;
 		}
-
-		const modal: ModalSettings = {
-			type: "component",
-			component: "VerifyMessageModal",
-			title: "Verified Message Status",
-			body: "This is the status of the signed message.",
-			meta: {
-				isVerified: isVerified,
-			},
-		};
-		modalStore.trigger(modal);
+		
 		signerspublickey = "";
 		signedmessage = "";
-		$loading = false;
 	}
 </script>
 
-<form class="grid grid-cols-1 lg:grid-cols-2 w-full gap-2 text-sm" on:submit|preventDefault={onSubmit}>
-	<div class="flex flex-col gap-1">
-		<label class="label">
-			<span class="text-xs">Signer's Public Key</span>
-			<textarea
-				bind:value={signerspublickey}
-				required
-				class="textarea bg-primary-100 text-sm h-48"
-				rows="4"
-				placeholder="Paste Signer's Public Key..."
-			/>
-		</label>
-	</div>
-	<div class="flex flex-col gap-1">
-		<label class="label">
-			<span class="text-xs">Signed Message</span>
-			<textarea
-				bind:value={signedmessage}
-				required
-				class="textarea bg-primary-100 text-sm h-48"
-				rows="4"
-				placeholder="Paste Signed Message..."
-			/>
-		</label>
-	</div>
-	<button type="submit" class="btn-sm btn variant-filled my-2">
-		{#if $loading === true}
+<form onsubmit={onSubmit}>
+	<label class="label-container">
+		<p class="label">Signer's Public Key</p>
+		<textarea bind:value={signerspublickey} rows="12" required placeholder="Paste Signer's Public Key..." />
+	</label>
+	<label class="label-container">
+		<p class="label">Signed Message</p>
+		<textarea bind:value={signedmessage} rows="12" placeholder="Paste Signed Message..." />
+	</label>
+	<button type="submit" class="button">
+		{#if loading === true}
 			<Spinner />
 		{:else}
 			Verify Signed Message
 		{/if}
 	</button>
 </form>
+
+<style>
+	@media (min-width: 1024px) {
+		form {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	form {
+		display: grid;
+		font-size: small;
+		max-width: 100%;
+		gap: 0.5rem;
+	}
+	.button {
+		margin-top: 0.5rem;
+		margin-bottom: 0.5rem;
+		width: 100%;
+	}
+</style>

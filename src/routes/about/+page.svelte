@@ -1,11 +1,7 @@
 <script>
-	import { Accordion, AccordionItem } from "@skeletonlabs/skeleton";
 </script>
 
-<div class="grid grid-cols-1 gap-2 p-2">
-	
-	
-	
+<!-- <div class="grid grid-cols-1 gap-2 p-2">
 	<Accordion>
 		<AccordionItem>
 			<svelte:fragment slot="summary"><h1 class="text-xl font-semibold underline underline-offset-4">What is Client-Side PGP Encryption?</h1></svelte:fragment>
@@ -30,7 +26,7 @@
 			<svelte:fragment slot="content"><p>While client-side encryption offers heightened privacy and security, it may come with trade-offs such as the responsibility of key management falling entirely on the user, potentially more complex setup processes, and the need for more processing power on the user's device. However, these are generally considered minor in comparison to the benefits of maintaining data privacy.</p></svelte:fragment>
 		</AccordionItem>
 	</Accordion>
-</div>
+</div> -->
 
 <style lang="postcss">
 	ul {

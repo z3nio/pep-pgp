@@ -1,4 +1,6 @@
 // place files you want to import through the `$lib` alias in this folder.
+import { browser } from "$app/environment";
+
 export function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -31,4 +33,12 @@ export function formatPgpBlock(pgpBlock: string) {
 
   const formattedPGPBlock = header + '\n' + formattedBody + '\n' + footer;
   return formattedPGPBlock;
+}
+
+export function copyToClipboard(string: string) {
+  if (browser) {
+    navigator.clipboard.writeText(string)
+  } else {
+    throw new Error ('Clipboard error')
+  }
 }
