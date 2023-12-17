@@ -8,7 +8,7 @@
 	import GithubIcon from "$lib/components/GithubIcon.svelte";
 	import Modal from "$lib/components/Modal.svelte";
 	import { modal } from "$lib/stores/modal";
-
+	
 	const routes = [
 		{
 			name: "Generate PGP Keys",
@@ -16,23 +16,23 @@
 		},
 		{
 			name: "Sign",
-			path: "/sign",
+			path: "/sign/",
 		},
 		{
 			name: "Verify",
-			path: "/verify",
+			path: "/verify/",
 		},
 		{
 			name: "Encrypt & Sign",
-			path: "/encrypt",
+			path: "/encrypt/",
 		},
 		{
 			name: "Decrypt & Verify",
-			path: "/decrypt",
+			path: "/decrypt/",
 		},
 		{
 			name: "About",
-			path: "/about",
+			path: "/about/",
 		},
 	];
 </script>
@@ -59,7 +59,7 @@
 		<nav>
 			<ul>
 				{#each routes as route}
-					<li class:active={$page.url.pathname === base + (route.path === "/" ? "" : route.path)}>
+					<li class:active={$page.url.pathname === base + route.path}>
 						<a href={base + route.path} class="nav-link">{route.name}</a>
 					</li>
 				{/each}
